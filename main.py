@@ -22,27 +22,20 @@ def createSelenium(start, end, batch_size):
         # Create product data
         data = createProductData(i, i + batch_size)
     
-        # Ensure we're on the ALDI homepage
+        # Load the ALDI homepage and update our LocalStorage "shoppingList" with the product data
         driver.get("https://aldi.com.au/")
-
-        # Update the local session storage key "shoppingList" with the data from createProductData()
         driver.execute_script("window.localStorage.setItem('shoppingList', arguments[0]);", data)
 
         # Wait for the local session storage key "shoppingList" to be updated
         WebDriverWait(driver, 5).until(lambda driver: driver.execute_script("window.localStorage.getItem('shoppingList').length") != 0)
 
-        # Set the value for the input with the class "shoppingListLocalStorage" to a URL-encoded version of the data
-        data = urllib.parse.quote(data)
-        driver.execute_script("document.getElementsByClassName('shoppingListLocalStorage')[0].value = arguments[0];", data)
-        time.sleep(3) # Hacky garbage, but Selenium has forced my hand
-
-        # Click the button with class "shopping-lists-show-button"
+        # Click the button ".shopping-lists-show-button" to open the shopping list
         driver.find_element(By.CLASS_NAME, "shopping-lists-show-button").click()
 
-        # Wait for the page to load
+        # Wait for the shopping list iFrame to load
         WebDriverWait(driver, 25).until(lambda driver: driver.find_element(By.CLASS_NAME, "mfp-iframe"))
 
-        # Get the entire raw HTML of the iFrame body
+        # Parse the entire raw HTML of the iFrame body
         driver.switch_to.frame(driver.find_element(By.CLASS_NAME, "mfp-iframe"))
         data = driver.find_element(By.TAG_NAME, "body").get_attribute("innerHTML")
 
@@ -60,9 +53,6 @@ def createSelenium(start, end, batch_size):
         # Write the data to a file
         with open("products.json", "a") as f:
             json.dump(itemData, f)
-
-        # # Don't close the browser
-        # input("Press Enter to continue...")
     
     input("Press Enter to close the browser...")
 
@@ -71,14 +61,11 @@ def createSelenium(start, end, batch_size):
 Create the product data
 '''
 def createProductData(start, end): 
-    # Generate empty JSON with product IDs for keys
-    # This tricks ALDI into adding those products to the shopping cart, which we can scrape
+    # Generate LocalStorage data with product IDs for keys
+    # This tricks ALDI into adding those products to the shopping cart, which we scrape
     data = {"i": {str(i):[] for i in range(start, end)}, "t": round(time.time() * 1000)}
 
-    # Create a new data file
-    with open("shoppingCartData.json", "w") as f:
-        json.dump(data, f)
-
+    # Return in JSON format
     return json.dumps(data)
 
 
