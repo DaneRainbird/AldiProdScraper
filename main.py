@@ -1,4 +1,4 @@
-import os, json, urllib.parse, time, sys
+import os, json, urllib.parse, time, sys, time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -12,21 +12,20 @@ def createSelenium(start, end, batch_size):
     # Initialize the driver
     driver = webdriver.Chrome(options=chrome_options)
 
-    # Nevigate to ALDI's homepage
+    # Navigate to ALDI's homepage
     driver.get("https://aldi.com.au/")
 
+    # Loop through range in batches
     for i in range(start, end, batch_size):
         print(f"Getting products {i} to {i + batch_size}\n")
 
+        # Create product data
         data = createProductData(i, i + batch_size)
-
+    
         # Ensure we're on the ALDI homepage
         driver.get("https://aldi.com.au/")
 
-        # Ensure the data is a JSON string
-        data = json.dumps(data)
-
-        # Update the local session storgae key "shoppingList" with the data from createProductData()
+        # Update the local session storage key "shoppingList" with the data from createProductData()
         driver.execute_script("window.localStorage.setItem('shoppingList', arguments[0]);", data)
 
         # Wait for the local session storage key "shoppingList" to be updated
@@ -72,21 +71,10 @@ def createSelenium(start, end, batch_size):
 Create the product data
 '''
 def createProductData(start, end): 
-    data = []
-    for i in range(start, end):
-        data.append({
-            "i": {
-                str(i): [
-                    "33869",
-                    "company",
-                    "",
-                    "",
-                    "",
-                    ""
-                ]
-            }
-        })
-
+    # Generate empty JSON with product IDs for keys
+    # This tricks ALDI into adding those products to the shopping cart
+    # which allows us to scrape them
+    data = [{"i": {str(i):[]}} for i in range(start, end)]
     new_data = {"i": {}}
     for item in data:
         for key, value in item["i"].items():
@@ -94,18 +82,15 @@ def createProductData(start, end):
                 new_data["i"][key] = value
             else:
                 new_data["i"][key].extend(value)
-            
-    new_data['t'] = 1694954487428
-
-    # Delete the existing data file
-    if os.path.exists("shoppingCartData.json"):
-        os.remove("shoppingCartData.json")
+    
+    # Use current timestamp for request
+    new_data['t'] = round(time.time() * 1000)
 
     # Create a new data file
     with open("shoppingCartData.json", "w") as f:
         json.dump(new_data, f)
 
-    return new_data
+    return json.dumps(new_data)
 
 
 if __name__ == "__main__":
