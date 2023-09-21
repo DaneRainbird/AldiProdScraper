@@ -1,10 +1,10 @@
-import os, json, urllib.parse, time
+import os, json, urllib.parse, time, sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 
-def createSelenium():
+def createSelenium(start, end, amount):
     # Set the options
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920x1080")
@@ -15,8 +15,9 @@ def createSelenium():
     # Nevigate to ALDI's homepage
     driver.get("https://aldi.com.au/")
 
-    amount = 3000
-    for i in range(0, 200000, amount):
+    for i in range(start, end, amount):
+        print(f"Getting products {i} to {i + amount}\n")
+
         data = createProductData(i, i + amount)
 
         # Ensure we're on the ALDI homepage
@@ -34,7 +35,7 @@ def createSelenium():
         # Set the value for the input with the class "shoppingListLocalStorage" to a URL-encoded version of the data
         data = urllib.parse.quote(data)
         driver.execute_script("document.getElementsByClassName('shoppingListLocalStorage')[0].value = arguments[0];", data)
-        time.sleep(3)
+        time.sleep(3) # Hacky garbage, but Selenium has forced my hand
 
         # Click the button with class "shopping-lists-show-button"
         driver.find_element(By.CLASS_NAME, "shopping-lists-show-button").click()
@@ -108,4 +109,22 @@ def createProductData(start, end):
 
 
 if __name__ == "__main__":
-    createSelenium()
+    # Get the arguments passed to the script
+    args = sys.argv[1:]
+
+    if len(args) != 3:
+        raise Exception("You must provide 3 arguments: start, end, and amount")
+
+    # Get the start and end values
+    start = int(args[0])
+    end = int(args[1])
+    amount = int(args[2])
+
+    # Sanity check the values
+    if start > end:
+        raise Exception("The start value cannot be greater than the end value")
+    
+    if amount <= 0:
+        raise Exception("The amount value must be greater than 0")
+
+    createSelenium(start, end, amount)
