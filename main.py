@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 
-def createSelenium(start, end, amount):
+def createSelenium(start, end, batch_size):
     # Set the options
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920x1080")
@@ -15,10 +15,10 @@ def createSelenium(start, end, amount):
     # Nevigate to ALDI's homepage
     driver.get("https://aldi.com.au/")
 
-    for i in range(start, end, amount):
-        print(f"Getting products {i} to {i + amount}\n")
+    for i in range(start, end, batch_size):
+        print(f"Getting products {i} to {i + batch_size}\n")
 
-        data = createProductData(i, i + amount)
+        data = createProductData(i, i + batch_size)
 
         # Ensure we're on the ALDI homepage
         driver.get("https://aldi.com.au/")
@@ -113,18 +113,18 @@ if __name__ == "__main__":
     args = sys.argv[1:]
 
     if len(args) != 3:
-        raise Exception("You must provide 3 arguments: start, end, and amount")
+        raise Exception("You must provide 3 arguments: start, end, and batch_size")
 
     # Get the start and end values
     start = int(args[0])
     end = int(args[1])
-    amount = int(args[2])
+    batch_size = int(args[2])
 
     # Sanity check the values
     if start > end:
         raise Exception("The start value cannot be greater than the end value")
     
-    if amount <= 0:
-        raise Exception("The amount value must be greater than 0")
+    if batch_size <= 0:
+        raise Exception("The batch_size value must be greater than 0")
 
-    createSelenium(start, end, amount)
+    createSelenium(start, end, batch_size)
