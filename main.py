@@ -72,25 +72,14 @@ Create the product data
 '''
 def createProductData(start, end): 
     # Generate empty JSON with product IDs for keys
-    # This tricks ALDI into adding those products to the shopping cart
-    # which allows us to scrape them
-    data = [{"i": {str(i):[]}} for i in range(start, end)]
-    new_data = {"i": {}}
-    for item in data:
-        for key, value in item["i"].items():
-            if key not in new_data["i"]:
-                new_data["i"][key] = value
-            else:
-                new_data["i"][key].extend(value)
-    
-    # Use current timestamp for request
-    new_data['t'] = round(time.time() * 1000)
+    # This tricks ALDI into adding those products to the shopping cart, which we can scrape
+    data = {"i": {str(i):[] for i in range(start, end)}, "t": round(time.time() * 1000)}
 
     # Create a new data file
     with open("shoppingCartData.json", "w") as f:
-        json.dump(new_data, f)
+        json.dump(data, f)
 
-    return json.dumps(new_data)
+    return json.dumps(data)
 
 
 if __name__ == "__main__":
