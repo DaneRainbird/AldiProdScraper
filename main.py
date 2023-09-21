@@ -8,6 +8,7 @@ def createSelenium(start, end, batch_size):
     # Set the options
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920x1080")
+    chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2}) # Stops images from being fetched
 
     # Initialize the driver
     driver = webdriver.Chrome(options=chrome_options)
