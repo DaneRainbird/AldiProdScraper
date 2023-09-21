@@ -20,15 +20,20 @@ def createSelenium(start, end, batch_size):
     for i in range(start, end, batch_size):
         print(f"Getting products {i} to {i + batch_size}\n")
 
+        # Load the ALDI homepage 
+        driver.get("https://aldi.com.au/")
+
         # Create product data
         data = createProductData(i, i + batch_size)
-    
-        # Load the ALDI homepage and update our LocalStorage "shoppingList" with the product data
-        driver.get("https://aldi.com.au/")
+        data_quoted = urllib.parse.quote(data)
+
+        # Update LocalStorage in browser as well as shoppingListLocalStorage element
         driver.execute_script("window.localStorage.setItem('shoppingList', arguments[0]);", data)
+        driver.execute_script("document.getElementsByClassName('shoppingListLocalStorage')[0].value = arguments[0];", data_quoted)
 
         # Wait for the local session storage key "shoppingList" to be updated
         WebDriverWait(driver, 5).until(lambda driver: driver.execute_script("window.localStorage.getItem('shoppingList').length") != 0)
+        WebDriverWait(driver, 5).until(lambda driver: driver.execute_script("document.getElementsByClassName('shoppingListLocalStorage')[0].value.length") != 0)
 
         # Click the button ".shopping-lists-show-button" to open the shopping list
         driver.find_element(By.CLASS_NAME, "shopping-lists-show-button").click()
