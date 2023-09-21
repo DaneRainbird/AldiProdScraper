@@ -56,9 +56,10 @@ def createSelenium(start, end, batch_size):
                 }
             )
 
-        # Write the data to a file
-        with open("products.json", "a") as f:
-            json.dump(itemData, f)
+        # Write the data to a file, if there is any
+        if itemData != []:
+            with open("products.json", "a") as f:
+                json.dump(itemData, f)
     
     input("Press Enter to close the browser...")
 
