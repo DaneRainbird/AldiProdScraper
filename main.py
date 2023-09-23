@@ -29,7 +29,7 @@ def createSelenium(start, end, batch_size):
     # Set the options
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920x1080")
-    ##chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2}) # Stops images from being fetched
 
     # Initialize the driver
@@ -76,14 +76,42 @@ def createSelenium(start, end, batch_size):
         # For each div with class "box--wrapper ym-gl ym-g25", get the text from div with class "box--description--header"
         # and find the <a> link location within the span with class "box--delete"
         for item in driver.find_elements(By.CLASS_NAME, "box--wrapper"):
-            # Get name, productID, and other values (price, url)
+            # Get name and productID
             itemName = item.find_element(By.CLASS_NAME, "box--description--header").text
             itemProductID = item.find_element(By.CLASS_NAME, "box--delete").find_element(By.TAG_NAME, "a").get_attribute("href").replace("https://www.aldi.com.au/en/shopping-list.html#/productId=", "")
-            
+            itemData = {"name": itemName}
+
+            # Get other product information
+            # Current price
+            try:
+                # Both dollar value and decimal was given, combine into one
+                # TODO: Check if there's products with only one of these and not both
+                itemPriceValue = item.find_element(By.CLASS_NAME, "box--value").text
+                itemPriceDecimal = item.find_element(By.CLASS_NAME,"box--decimal").text
+                itemData["currentPrice"] = itemPriceValue + itemPriceDecimal
+            except:
+                pass
+
+            # Former "non-discounted" price
+            try:
+                itemData["formerPrice"] = item.find_element(By.CLASS_NAME, "box--former-price").text
+            except:
+                pass
+
+            # Price per unit or quantity
+            try:
+                itemData["unitPrice"] = item.find_element(By.CLASS_NAME, "box--baseprice").text
+            except:
+                pass
+
+            # Quantity/amount of product
+            try:
+                itemData["unit"] = item.find_element(By.CLASS_NAME, "box--amount").text
+            except:
+                pass
+
             # Add product to database
-            itemDatabase[itemProductID] = {
-                "name": itemName
-            }
+            itemDatabase[itemProductID] = itemData
 
         # Write the data to a file
         saveProductData(itemDatabase)
