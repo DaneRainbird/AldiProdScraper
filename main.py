@@ -67,7 +67,7 @@ def createSelenium(start, end, batch_size):
         driver.switch_to.frame(driver.find_element(By.CLASS_NAME, "mfp-iframe"))
         data = driver.find_element(By.TAG_NAME, "body").get_attribute("innerHTML")
 
-        # Load any existing product data to itemData array
+        # Load any existing product data to itemDatabase dict
         try:
             itemDatabase = loadProductData()
         except:
