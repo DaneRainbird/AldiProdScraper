@@ -4,10 +4,32 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 
+
+def loadProductData(filepath="products.json"):
+    # Check if file exists
+    if os.path.exists(filepath):
+        # Read product data from file
+        with open(filepath, "r") as f:
+            productData = json.load(f)
+        return productData
+    else:
+        raise FileNotFoundError()
+
+
+def saveProductData(productData, filepath="products.json"):
+    # Ensure product data isn't empty
+    if len(productData) > 0:
+        # Write product data to file
+        # This overwrites your file, so please be careful
+        with open(filepath, "w") as f:
+            json.dump(productData, f)
+
+
 def createSelenium(start, end, batch_size):
     # Set the options
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1920x1080")
+    ##chrome_options.add_argument("--headless=new")
     chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2}) # Stops images from being fetched
 
     # Initialize the driver
@@ -24,7 +46,7 @@ def createSelenium(start, end, batch_size):
         driver.get("https://aldi.com.au/")
 
         # Create product data
-        data = createProductData(i, i + batch_size)
+        data = createProductIDs(i, i + batch_size)
         data_quoted = urllib.parse.quote(data)
 
         # Update LocalStorage in browser as well as shoppingListLocalStorage element
@@ -45,29 +67,34 @@ def createSelenium(start, end, batch_size):
         driver.switch_to.frame(driver.find_element(By.CLASS_NAME, "mfp-iframe"))
         data = driver.find_element(By.TAG_NAME, "body").get_attribute("innerHTML")
 
-        itemData = []
+        # Load any existing product data to itemData array
+        try:
+            itemDatabase = loadProductData()
+        except:
+            itemDatabase = {}
+        
         # For each div with class "box--wrapper ym-gl ym-g25", get the text from div with class "box--description--header"
         # and find the <a> link location within the span with class "box--delete"
         for item in driver.find_elements(By.CLASS_NAME, "box--wrapper"):
-            itemData.append(
-                {
-                    "name": item.find_element(By.CLASS_NAME, "box--description--header").text,
-                    "productId": item.find_element(By.CLASS_NAME, "box--delete").find_element(By.TAG_NAME, "a").get_attribute("href").replace("https://www.aldi.com.au/en/shopping-list.html#/productId=", "")
-                }
-            )
+            # Get name, productID, and other values (price, url)
+            itemName = item.find_element(By.CLASS_NAME, "box--description--header").text
+            itemProductID = item.find_element(By.CLASS_NAME, "box--delete").find_element(By.TAG_NAME, "a").get_attribute("href").replace("https://www.aldi.com.au/en/shopping-list.html#/productId=", "")
+            
+            # Add product to database
+            itemDatabase[itemProductID] = {
+                "name": itemName
+            }
 
-        # Write the data to a file, if there is any
-        if itemData != []:
-            with open("products.json", "a") as f:
-                json.dump(itemData, f)
+        # Write the data to a file
+        saveProductData(itemDatabase)
     
     input("Press Enter to close the browser...")
 
 
 '''
-Create the product data
+Create the product ID data for our request 
 '''
-def createProductData(start, end): 
+def createProductIDs(start, end): 
     # Generate LocalStorage data with product IDs for keys
     # This tricks ALDI into adding those products to the shopping cart, which we scrape
     data = {"i": {str(i):[] for i in range(start, end)}, "t": round(time.time() * 1000)}
